@@ -9,6 +9,8 @@ from profiles_api import permissions
 from rest_framework import filters
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.settings import api_settings
+from rest_framework.permissions import IsAuthenticated
+
 
 class HelloApiView(APIView):
     """api view class"""
@@ -17,10 +19,10 @@ class HelloApiView(APIView):
     def get(self, request, format=None):
         """return list of api views features"""
         an_apiview = [
-             'Uses http functions (get, post, patch, delete)',
-             'Is similar to traditional djnago view',
-             'gives you the most control over you app logic',
-             'is mapped manually to urls'
+            'Uses http functions (get, post, patch, delete)',
+            'Is similar to traditional djnago view',
+            'gives you the most control over you app logic',
+            'is mapped manually to urls'
         ]
 
         return Response({'message': 'Hello!', 'an_apiview': an_apiview})
@@ -35,9 +37,9 @@ class HelloApiView(APIView):
             return Response({'message': message})
         else:
             return Response(
-                    serializer.errors,
-                    status=status.HTTP_400_BAD_REQUEST
-                    )
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     def put(self, request, pk=None):
         """Handle updating an object"""
@@ -118,3 +120,18 @@ class UserProfileViewSet(viewsets.ModelViewSet):
 class UserLoginApiView(ObtainAuthToken):
     """handle creating user authentication tokens"""
     renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
+
+
+class UserProfileFeedViewSet(viewsets.ModelViewSet):
+    """Handles creating, reading and updating profile feed items"""
+    authentication_classes = (TokenAuthentication,)
+    serializer_class = serializers.ProfileFeedItemSerializer
+    queryset = models.ProfileFeedItem.objects.all()
+    permission_classes = (
+        permissions.UpdateOwnStatus,
+        IsAuthenticated
+    )
+
+    def perform_create(self, serializer):
+        """Sets the user profile to the logged in user"""
+        serializer.save(user_profile=self.request.user)
